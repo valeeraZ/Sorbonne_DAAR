@@ -20,18 +20,27 @@ public class NFAState {
         epsilonTransitions = new HashSet<>();
     }
 
+    public int getId() {
+        return id;
+    }
+
     public Map<Integer, Set<NFAState>> getTransitions() {
         return transitions;
     }
 
+    /**
+     * get next state(s) by epsilon found in transitions
+     * @return a set NFAState
+     */
     public Set<NFAState> getEpsilonTransitions() {
         return epsilonTransitions;
     }
 
-    public void addTransition(int input){
-        addTransition(input, new NFAState());
-    }
-
+    /**
+     * add a transition(input symbol, next NFAState) to this
+     * @param input an input symbol in all the 256 ascii char
+     * @param next the next NFAState that `this` will go to via the input
+     */
     public void addTransition(int input, NFAState next){
         Set<NFAState> states = this.transitions.get(input);
         if (states == null){
@@ -41,14 +50,67 @@ public class NFAState {
         this.transitions.put(input, states);
     }
 
-    // add an epsilon transition - no input, only the next state
+    /**
+     * add an epsilon transition - no input, only the next state
+     * @param next the NFAState which `this` goes to via an epsilon
+     */
     public void addTransition(NFAState next){
         this.epsilonTransitions.add(next);
     }
 
-    // get next state(s) by the input symbol
+    /**
+     * get next state(s) by the input symbol found in transitions
+     * @param input an input symbol in all the 256 ascii char
+     * @return a set NFAState
+     */
     public Set<NFAState> getTransition(int input){
         return this.transitions.get(input);
+    }
+
+    private Set<NFAState> search(int input){
+        Set<NFAState> statesViaInput = this.getTransition(input);
+        if (statesViaInput == null)
+            return new HashSet<>();
+
+        Set<NFAState> res = new HashSet<>(statesViaInput);
+        res.addAll(statesViaInput);
+
+        for (NFAState state: res) {
+            res.addAll(state.search(input));
+        }
+        return res;
+    }
+
+    /**
+     * from a set of NFAStates, move via the input, get a new set of NFAStates
+     * the subset makes a new DFAState
+     * @param input an input symbol in all the 256 ascii char
+     * @return a subset of NFAStates
+     */
+    public static Set<NFAState> move(int input, Set<NFAState> dfa){
+        Set<NFAState> subset = new HashSet<>();
+
+        for(NFAState nfaState : dfa){
+            subset.addAll(nfaState.search(input));
+        }
+        return subset;
+    }
+
+    /**
+     * a set of NFAStates, which departing from `this` NFAState, does a Kleene Closure of epsilon, can get
+     * @return a set of NFAStates
+     */
+    public Set<NFAState> epsilonClosure(){
+        Set<NFAState> res = new HashSet<>(this.epsilonTransitions);
+        // you can't operate res while iterating res -- ConcurrentModificationException
+        // so use a tmp variable
+        Set<NFAState> tmp = new HashSet<>();
+        for (NFAState next: res) {
+            tmp.addAll(next.epsilonClosure());
+        }
+        res.add(this);
+        res.addAll(tmp);
+        return res;
     }
 
     @Override
@@ -60,7 +122,7 @@ public class NFAState {
     }
     @Override
     public String toString(){
-        return print(new HashSet<NFAState>());
+        return print(new HashSet<>());
     }
 
     public String print(HashSet<NFAState> visited) {

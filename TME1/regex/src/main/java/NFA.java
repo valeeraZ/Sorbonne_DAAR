@@ -1,3 +1,7 @@
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
 /**
  * Created by Wenzhuo Zhao on 28/09/2021.
  * Nondeterministic finite automaton
@@ -14,6 +18,14 @@ public class NFA {
     public NFA(NFAState root, NFAState accepting){
         this.root = root;
         this.accepting = accepting;
+    }
+
+    public NFAState getRoot() {
+        return root;
+    }
+
+    public NFAState getAccepting() {
+        return accepting;
     }
 
     public static NFA fromRegExTreeToNFA(RegExTree ret){
@@ -71,6 +83,33 @@ public class NFA {
         }
 
         return new NFA(new NFAState(), new NFAState());
+    }
+
+    /**
+     * get all the input symbols in this automaton
+     * @return a set of Integer representing input symbol
+     */
+    public Set<Integer> getInputSymbols(){
+        return getInputSymbols(this.root, new HashSet<>());
+    }
+
+    private Set<Integer> getInputSymbols(NFAState state, HashSet<NFAState> visited){
+        // cycle
+        if (!visited.add(state))
+            return new HashSet<>();
+
+        Set<Integer> res = new HashSet<>(state.getTransitions().keySet());
+
+        for (NFAState nextState: state.getEpsilonTransitions()){
+            res.addAll(getInputSymbols(nextState, visited));
+        }
+
+        for (Set<NFAState> states: state.getTransitions().values()){
+            for (NFAState nextState: states) {
+                res.addAll(getInputSymbols(nextState, visited));
+            }
+        }
+        return res;
     }
 
     @Override

@@ -5,20 +5,20 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class NFATest {
+public class DFATest {
 
     private List<RegExTree> trees;
 
     @Before
     public void init(){
-        String[] exprs = {"(a|b)*ab", "a|bc*", "(abc)*|(bc)", "abcd", "(abc)*d*"};
+        String[] exprs = {"(a|b)*ab"};
         trees = Arrays.stream(exprs).map(RegEx::parse).collect(Collectors.toList());
     }
 
     @Test
-    public void toNFATest(){
+    public void NFAtoDFATest(){
        trees.stream()
             .map(NFA::fromRegExTreeToNFA)
-            .forEach(System.out::println);
+            .map(DFA::fromNFAtoDFA).forEach(System.out::println);
     }
 }
