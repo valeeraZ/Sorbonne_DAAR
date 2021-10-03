@@ -15,8 +15,11 @@ public class DFA {
     // end is the accepting state of an automate
     private final DFAState root;
 
-    public DFA(DFAState root){
+    private final Set<DFAState> acceptings;
+
+    public DFA(DFAState root, Set<DFAState> acceptings){
         this.root = root;
+        this.acceptings = acceptings;
     }
 
     /**
@@ -27,8 +30,10 @@ public class DFA {
     public static DFA fromNFAtoDFA(NFA nfa){
         Set<Integer> inputSymbols = nfa.getInputSymbols();
         NFAState root = nfa.getRoot();
+        NFAState accepting = nfa.getAccepting();
 
         DFAState start = new DFAState(root.epsilonClosure());
+        Set<DFAState> accepts = new HashSet<>();
 
         // use HashSet to add only new DFAStates
         Set<DFAState> allDFAStates = new HashSet<>();
@@ -46,12 +51,18 @@ public class DFA {
                     if (!allDFAStates.add(next)){
                         for(DFAState same: allDFAStates){
                             if (same.equals(next)){
+                                // cycle transition
                                 current.addTransition(input, same);
                                 break;
                             }
                         }
                         DFAState.counter --;
                     }else {
+                        // check if the `next` DFAState is an accepting state
+                        // which means it contains the accepting NFAState of the NFA
+                        if (next.getSubset().contains(accepting)){
+                            accepts.add(next);
+                        }
                         queue.offer(next);
                         current.addTransition(input, next);
                     }
@@ -59,7 +70,7 @@ public class DFA {
             }
         }
 
-        return new DFA(start);
+        return new DFA(start, accepts);
     }
 
     private static Set<NFAState> getNextSubStates(DFAState state, int input){
