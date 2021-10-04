@@ -69,6 +69,75 @@ public class DFA {
                 }
             }
         }
+        
+        // divide the state in 2 parts
+        // one for all ends and one for the others
+        Queue<Set<DFAState>> worklist = new LinkedList<>();
+        Set<DFAState> union1 = new HashSet<>();
+        for (DFAState state : allDFAStates){
+            if (!accepts.contains(state)){
+                union1.add(state);
+            }
+        }
+        // add two parts in worklist
+        worklist.add(union1);
+        worklist.add(accepts);
+        Set<DFAState> min_state = new HashSet<>();
+        while (!worklist.isEmpty()){
+            Set<DFAState> current = worklist.poll();
+            // find if their next step still in the union
+            Set<DFAState> union2 = new HashSet<>();
+            for (Integer input : inputSymbols){
+                Map<DFAState,Set<NFAState>> map = new HashMap<>();
+                Set<NFAState> in_union = new HashSet<>();
+                for(DFAState st : current){
+                    map.put(st,getNextSubStates(st,input));
+                    in_union.addAll(st.getSubset());
+                }
+                // once found, divide the unoin
+                for(DFAState st : current){
+                    if (!in_union.containsAll(map.get(st))){
+                        union2.add(st);
+                        current.remove(st);
+                    }
+                }
+            }
+            // add the union into worklist
+            if (union2.size() > 1){
+                worklist.add(union2);
+            }
+            if (union2.size() == 1){
+                min_state.addAll(union2);
+            }
+            // now for all state in current
+            // their next step is in the union
+            // so we can consider they are the same state
+            if (current.size() == 1){
+                min_state.addAll(union2);
+            }else{
+                if (current.size() == 0){
+                    break;
+                }
+                // change the transitions for each state
+                for (DFAState state : allDFAStates){
+                    Map<Integer,Set<DFAState>> map = state.getTransitions();
+                    for(Integer input : inputSymbols){
+                        Set<DFAState> set = map.get(input);
+                        for (DFAState state1 : set){
+                            if (current.contains(state1)){
+                                set.remove(state1);
+                                set.add(current.iterator().next());
+                            }
+                        }
+                    }
+                }
+                //
+                Set<DFAState> res = new HashSet<>();
+                res.add(current.iterator().next());
+                // add the state into final
+                min_state.addAll(res);
+            }
+        }
 
         return new DFA(start, accepts);
     }
