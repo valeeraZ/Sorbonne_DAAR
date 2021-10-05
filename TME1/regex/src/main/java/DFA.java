@@ -1,11 +1,11 @@
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.Queue;
-import java.util.Set;
+package regex;
+
+import java.util.*;
 
 /**
  * Created by Wenzhuo Zhao on 02/10/2021.
  * Deterministic finite automaton
+ * Modified by Chengyu Yang
  */
 public class DFA {
     // 256 ASCII chars
@@ -20,6 +20,14 @@ public class DFA {
     public DFA(DFAState root, Set<DFAState> acceptings){
         this.root = root;
         this.acceptings = acceptings;
+    }
+
+    public DFAState getRoot() {
+        return root;
+    }
+
+    public Set<DFAState> getAcceptings() {
+        return acceptings;
     }
 
     /**
@@ -94,13 +102,16 @@ public class DFA {
                     map.put(st,getNextSubStates(st,input));
                     in_union.addAll(st.getSubset());
                 }
-                // once found, divide the unoin
+                // once found, divide the union
+                Set<DFAState> tmp = new HashSet<>();
                 for(DFAState st : current){
                     if (!in_union.containsAll(map.get(st))){
                         union2.add(st);
-                        current.remove(st);
+                        tmp.add(st);
                     }
                 }
+                current.removeAll(tmp);
+
             }
             // add the union into worklist
             if (union2.size() > 1){
@@ -123,6 +134,8 @@ public class DFA {
                     Map<Integer,Set<DFAState>> map = state.getTransitions();
                     for(Integer input : inputSymbols){
                         Set<DFAState> set = map.get(input);
+                        if (set == null)
+                            continue;
                         for (DFAState state1 : set){
                             if (current.contains(state1)){
                                 set.remove(state1);
