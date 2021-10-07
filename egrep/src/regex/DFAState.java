@@ -25,15 +25,15 @@ public class DFAState {
     /**
      * input symbols and next DFAStates
      */
-    private final Map<Integer, Set<DFAState>> transitions;
+    private final Map<Integer, DFAState> transitions;
 
-    public DFAState(){
+    public DFAState() {
         id = counter++;
         subset = new HashSet<>();
         transitions = new HashMap<>();
     }
 
-    public DFAState(Set<NFAState> subset){
+    public DFAState(Set<NFAState> subset) {
         id = counter++;
         this.subset = subset;
         transitions = new HashMap<>();
@@ -43,21 +43,16 @@ public class DFAState {
         return subset;
     }
 
-    public Map<Integer, Set<DFAState>> getTransitions() {
+    public Map<Integer, DFAState> getTransitions() {
         return transitions;
     }
 
-    public void addTransition(int input, DFAState next){
-        Set<DFAState> states = this.transitions.get(input);
-        if (states == null){
-            states = new HashSet<>();
-        }
-        states.add(next);
-        this.transitions.put(input, states);
+    public void addTransition(int input, DFAState next) {
+        this.transitions.put(input, next);
     }
 
     // get next state(s) by the input symbol
-    public Set<DFAState> getTransition(int input){
+    public DFAState getTransition(int input) {
         return this.transitions.get(input);
     }
 
@@ -75,18 +70,18 @@ public class DFAState {
     }
 
     @Override
-    public String toString(){
+    public String toString() {
         return print(new HashSet<DFAState>());
     }
 
-    public String printSubset(){
+    public String printSubset() {
         StringBuilder sb = new StringBuilder();
-        sb.append((char)this.id).append(": ").append("{");
-        for (NFAState state: subset) {
+        sb.append((char) this.id).append(": ").append("{");
+        for (NFAState state : subset) {
             sb.append(state.getId()).append(", ");
         }
         // remove the last 2 characters (',' and ' ')
-        sb.delete(sb.length()-2, sb.length());
+        sb.delete(sb.length() - 2, sb.length());
         sb.append("}");
         return sb.toString();
     }
@@ -95,18 +90,17 @@ public class DFAState {
         if (!visited.add(this))
             return null;
         StringBuilder sb = new StringBuilder();
-        for (Map.Entry<Integer, Set<DFAState>> entry: transitions.entrySet()) {
-            for (DFAState state : entry.getValue()) {
-                // (char): convert input symbol & id (A-Z) to ascii char
-                sb.append(this.printSubset()).append(" -- ").append((char)entry.getKey().intValue()).append(" --> ").append(state.printSubset());
-                sb.append("\n");
+        for (Map.Entry<Integer, DFAState> entry : transitions.entrySet()) {
+            DFAState state = entry.getValue();
+            // (char): convert input symbol & id (A-Z) to ascii char
+            sb.append(this.printSubset()).append(" -- ").append((char) entry.getKey().intValue()).append(" --> ").append(state.printSubset());
+            sb.append("\n");
+
+            String seq = state.print(visited);
+            if (seq != null) {
+                sb.append(seq);
             }
-            for (DFAState state: entry.getValue()) {
-                String seq = state.print(visited);
-                if(seq != null){
-                    sb.append(seq);
-                }
-            }
+
         }
 
         return sb.toString();

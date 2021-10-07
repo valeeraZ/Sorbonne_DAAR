@@ -9,7 +9,7 @@ public class NFAState {
     private final int id;
 
     // input symbols and next states
-    private final Map<Integer, Set<NFAState>> transitions;
+    private final Map<Integer, NFAState> transitions;
 
     // non input symbol (epsilon), only next states
     private final Set<NFAState> epsilonTransitions;
@@ -24,7 +24,7 @@ public class NFAState {
         return id;
     }
 
-    public Map<Integer, Set<NFAState>> getTransitions() {
+    public Map<Integer, NFAState> getTransitions() {
         return transitions;
     }
 
@@ -42,12 +42,7 @@ public class NFAState {
      * @param next the next NFAState that `this` will go to via the input
      */
     public void addTransition(int input, NFAState next){
-        Set<NFAState> states = this.transitions.get(input);
-        if (states == null){
-            states = new HashSet<>();
-        }
-        states.add(next);
-        this.transitions.put(input, states);
+        transitions.put(input, next);
     }
 
     /**
@@ -59,25 +54,23 @@ public class NFAState {
     }
 
     /**
-     * get next state(s) by the input symbol found in transitions
+     * get next state by the input symbol found in transitions
      * @param input an input symbol in all the 256 ascii char
      * @return a set NFAState
      */
-    public Set<NFAState> getTransition(int input){
+    public NFAState getTransition(int input){
         return this.transitions.get(input);
     }
 
     private Set<NFAState> search(int input){
-        Set<NFAState> statesViaInput = this.getTransition(input);
-        if (statesViaInput == null)
+        NFAState stateViaInput = this.getTransition(input);
+        if (stateViaInput == null)
             return new HashSet<>();
 
-        Set<NFAState> res = new HashSet<>(statesViaInput);
-        res.addAll(statesViaInput);
+        Set<NFAState> res = new HashSet<>();
+        res.add(stateViaInput);
+        res.addAll(stateViaInput.search(input));
 
-        for (NFAState state: res) {
-            res.addAll(state.search(input));
-        }
         return res;
     }
 
@@ -118,8 +111,14 @@ public class NFAState {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         NFAState state = (NFAState) o;
-        return id == state.id && Objects.equals(transitions, state.transitions) && Objects.equals(epsilonTransitions, state.epsilonTransitions);
+        return id == state.id ;
     }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
+    }
+
     @Override
     public String toString(){
         return print(new HashSet<>());
@@ -129,18 +128,18 @@ public class NFAState {
         if (!visited.add(this))
             return null;
         StringBuilder sb = new StringBuilder();
-        for (Map.Entry<Integer, Set<NFAState>> entry: transitions.entrySet()) {
-            for (NFAState state : entry.getValue()) {
-                // (char): convert input symbol to ascii char
-                sb.append(this.id).append(" -- ").append((char)entry.getKey().intValue()).append(" --> ").append(state.id);
-                sb.append("\n");
+        for (Map.Entry<Integer, NFAState> entry: transitions.entrySet()) {
+            NFAState state = entry.getValue();
+            // (char): convert input symbol to ascii char
+            sb.append(this.id).append(" -- ").append((char)entry.getKey().intValue()).append(" --> ").append(state.id);
+            sb.append("\n");
+
+
+            String seq = state.print(visited);
+            if(seq != null){
+                sb.append(seq);
             }
-            for (NFAState state: entry.getValue()) {
-                String seq = state.print(visited);
-                if(seq != null){
-                    sb.append(seq);
-                }
-            }
+
         }
 
         // and epsilon transitions

@@ -1,5 +1,4 @@
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -14,10 +13,12 @@ public class NFA {
     // end is the accepting state of an automate
     private final NFAState root;
     private final NFAState accepting;
+    private Set<Integer> inputSymbols;
 
-    public NFA(NFAState root, NFAState accepting){
+    public NFA(NFAState root, NFAState accepting, Set<Integer> inputSymbols){
         this.root = root;
         this.accepting = accepting;
+        this.inputSymbols = inputSymbols;
     }
 
     public NFAState getRoot() {
@@ -32,16 +33,19 @@ public class NFA {
         if(ret.subTrees.isEmpty()){
             NFAState start_state = new NFAState();
             NFAState final_state = new NFAState();
+            Set<Integer> inputSymbols = new HashSet<>();
             if (ret.root != NodeEnum.DOT){
                 // only 1 transition
                 start_state.addTransition(ret.root, final_state);
+                inputSymbols.add(ret.root);
             }else {
                 for (int i = 0; i < COL; i++) {
                     // all the 256 transitions
                     start_state.addTransition(i, final_state);
+                    inputSymbols.add(i);
                 }
             }
-            return new NFA(start_state, final_state);
+            return new NFA(start_state, final_state, inputSymbols);
         }
 
         if(ret.root == NodeEnum.CONCAT){
@@ -49,7 +53,10 @@ public class NFA {
             NFA left = fromRegExTreeToNFA(ret.subTrees.get(0));
             NFA right = fromRegExTreeToNFA(ret.subTrees.get(1));
             left.accepting.addTransition(right.root);
-            return new NFA(left.root, right.accepting);
+            Set<Integer> inputSymbols = new HashSet<>();
+            inputSymbols.addAll(left.inputSymbols);
+            inputSymbols.addAll(right.inputSymbols);
+            return new NFA(left.root, right.accepting, inputSymbols);
         }
 
         if (ret.root == NodeEnum.ALTERN){
@@ -58,6 +65,11 @@ public class NFA {
             NFAState start_state = new NFAState();
             NFA left = fromRegExTreeToNFA(ret.subTrees.get(0));
             NFA right = fromRegExTreeToNFA(ret.subTrees.get(1));
+
+            Set<Integer> inputSymbols = new HashSet<>();
+            inputSymbols.addAll(left.inputSymbols);
+            inputSymbols.addAll(right.inputSymbols);
+
             NFAState end_state = new NFAState();
 
             start_state.addTransition(left.root);
@@ -65,7 +77,7 @@ public class NFA {
             left.accepting.addTransition(end_state);
             right.accepting.addTransition(end_state);
 
-            return new NFA(start_state, end_state);
+            return new NFA(start_state, end_state, inputSymbols);
         }
 
         if (ret.root == NodeEnum.ETOILE){
@@ -79,10 +91,12 @@ public class NFA {
             left.accepting.addTransition(left.root);
             left.accepting.addTransition(end_state);
 
-            return new NFA(start_state, end_state);
+            Set<Integer> inputSymbols = new HashSet<>(left.inputSymbols);
+
+            return new NFA(start_state, end_state, inputSymbols);
         }
 
-        return new NFA(new NFAState(), new NFAState());
+        return new NFA(new NFAState(), new NFAState(), new HashSet<>());
     }
 
     /**
@@ -90,26 +104,7 @@ public class NFA {
      * @return a set of Integer representing input symbol
      */
     public Set<Integer> getInputSymbols(){
-        return getInputSymbols(this.root, new HashSet<>());
-    }
-
-    private Set<Integer> getInputSymbols(NFAState state, HashSet<NFAState> visited){
-        // cycle
-        if (!visited.add(state))
-            return new HashSet<>();
-
-        Set<Integer> res = new HashSet<>(state.getTransitions().keySet());
-
-        for (NFAState nextState: state.getEpsilonTransitions()){
-            res.addAll(getInputSymbols(nextState, visited));
-        }
-
-        for (Set<NFAState> states: state.getTransitions().values()){
-            for (NFAState nextState: states) {
-                res.addAll(getInputSymbols(nextState, visited));
-            }
-        }
-        return res;
+        return this.inputSymbols;
     }
 
     @Override

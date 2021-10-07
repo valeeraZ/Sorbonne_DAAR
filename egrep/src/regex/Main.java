@@ -9,22 +9,37 @@ public class Main {
     static DFAState root;
     static Set<DFAState> acceptings;
 
-    public static boolean search(DFAState state, String line, int position){
+    public static boolean search(DFAState state, String line, int position) {
+        if (acceptings.contains(state))
+            return true;
+
         if (position >= line.length())
             return false;
 
         int input = line.charAt(position);
 
-        if (acceptings.contains(state))
-            return true;
-        if (state.getTransition(input) == null)
-            return search(root, line, position+1);
+        DFAState next = state.getTransition(input);
 
-        for (DFAState next: state.getTransition(input)) {
-            if (!search(next, line, position+1))
-                return search(root, line, position+1);
-        }
+        if (next == null)
+            return search(root, line, position + 1);
+
+        if (!search(next, line, position + 1))
+            return search(root, line, position + 1);
+
         return true;
+    }
+
+    public static String readToString(File file) {
+        long filelength = file.length();
+        byte[] filecontent = new byte[(int) filelength];
+        try {
+            FileInputStream in = new FileInputStream(file);
+            in.read(filecontent);
+            in.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return new String(filecontent);
     }
 
 
@@ -33,7 +48,7 @@ public class Main {
         RegExTree ret;
         File file;
 
-        if(args.length < 2) {
+        if (args.length < 2) {
             System.out.println("usage : <RegEx pattern> <filename>");
             return;
         }
@@ -43,6 +58,8 @@ public class Main {
         System.out.println("  >> file name : " + fileName);
 
         file = new File(fileName);
+
+        long startTime = System.currentTimeMillis();
 
         if (regEx.length() < 1) {
             System.err.println("  >> ERROR: empty regEx.");
@@ -63,20 +80,23 @@ public class Main {
         root = dfa.getRoot();
         acceptings = dfa.getAcceptings();
 
-        BufferedReader reader = new BufferedReader(new FileReader(file));
-        String line;
         int lineNumber = 0;
         int resultNumber = 0;
-        while ( (line = reader.readLine()) != null){
-            if (!line.isEmpty()){
-                if (search(root, line, 0)){
-                    System.out.println(lineNumber + " - " + line);
-                    resultNumber ++;
-                }
+        StringBuilder sb = new StringBuilder();
+        String text = readToString(file);
+        String[] lines = text.split("\\n");
+
+        for (String line: lines) {
+            lineNumber++;
+            if (search(root, line, 0)) {
+                sb.append(lineNumber).append(" - ").append(line).append("\n");
+                resultNumber++;
             }
-            lineNumber ++;
         }
+        System.out.println(sb.toString());
         System.out.println(resultNumber + " lines matched found");
+        long searchEndTime = System.currentTimeMillis();
+        System.out.println("Time Used： " + (searchEndTime - startTime) + "ms");
 
     }
 }

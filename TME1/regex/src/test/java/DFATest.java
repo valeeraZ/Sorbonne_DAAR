@@ -9,17 +9,18 @@ public class DFATest {
 
     private List<RegExTree> trees;
 
-    @Before
+    /*@Before
     public void init(){
         String[] exprs = {"(a|b)*ab"};
         trees = Arrays.stream(exprs).map(RegEx::parse).collect(Collectors.toList());
-    }
+    }*/
 
     @Test
     public void NFAtoDFATest(){
-       trees.stream()
+       /*trees.stream()
             .map(NFA::fromRegExTreeToNFA)
-            .map(DFA::fromNFAtoDFA).forEach(System.out::println);
+            .map(DFA::fromNFAtoDFA).forEach(System.out::println);*/
+        System.out.println(DFA.fromNFAtoDFA(NFA.fromRegExTreeToNFA(RegEx.parse("(a|b)*ab"))));
     }
 }
 /*
