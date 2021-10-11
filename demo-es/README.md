@@ -1,3 +1,5 @@
+# Description
+This is a demo for using Elastic Search in Spring Boot which does some actions with index `/articles`.
 
 # Usage
 1. Clone this project
