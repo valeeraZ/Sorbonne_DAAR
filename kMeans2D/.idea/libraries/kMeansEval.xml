@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="kMeansEval">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/kMeansEval.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
